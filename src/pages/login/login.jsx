@@ -6,9 +6,12 @@ import {
     Icon,
     Input,
     Button,
-    // message,
+    message,
   } from 'antd'
-
+import {Redirect} from 'react-router-dom'
+import {reqLogin} from '../../api'
+import memoryUtils from '../../utils/memoryUtils'
+import storageUtils from '../../utils/storageUtils'
   const Item = Form.Item
   
 //后台管理的路由组件
@@ -17,25 +20,30 @@ import {
         //阻止默认事件发生
         event.preventDefault();
         //对所有表单字段进行验证
-        // this.props.form.validateFields(async (err,values) => {
-        //     // 检验成功
-        //     if(!err) {
-        //         //请求登录
-        //         const {username,password} = values
-        //         const result = await reqLogin(username,password)
+        this.props.form.validateFields(async (err,values) => {
+            // 检验成功
+            if(!err) {
+                //请求登录
+                //结构
+                const {username,password} = values
+                const result = await reqLogin(username,password)
 
-        //         if(result.status === 0){
-        //             message.success('登录成功')
-        //             // //保存user
-        //             // const user = result.data
+                if(result.status === 0){
+                    message.success('登录成功')
+                    // 跳转到管理界面 push是可回退到前一个地址
+                      this.props.history.replace('/')
+                    // //保存user
+                    const user = result.data;
+                    memoryUtils.user = user; //保存在内存中
+                    storageUtils.saveUser(user);//保存到local本地中
 
-        //         } else {
-        //             message.error('登录失败')
-        //         }
-        //     } else {
-        //         alert('检验失败！')
-        //     }
-        // })
+                } else {
+                    message.error(result.msg)
+                }
+            } else {
+                alert('检验失败！')
+            }
+        })
     }
      /*
   对密码进行自定义验证
@@ -64,6 +72,11 @@ import {
   }
    
     render () {
+         // 如果用户已经登陆, 自动跳转到管理界面
+        const user = memoryUtils.user
+        if(user && user._id) {
+          return <Redirect to='/'/>
+        }
 
          // 得到具强大功能的form对象
         const form = this.props.form
